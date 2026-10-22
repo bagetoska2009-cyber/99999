@@ -1,5 +1,7 @@
--- BAGGET SCRIPTS v19.1 [ULTIMATE STUDIO ADMIN & SANDBOX SUITE]
--- Added: Custom Cyber Floating Badge, Background ASCII Art, Physics Vortex, Repel Field, Fling Touch, Gravity Gun, HeadSit, Cyber Wings, Ghost Trail, Lightning FX & Full UI
+-- BAGGET SCRIPTS v19.2 [ADMIN & TROLLING SUITE]
+-- Fixed: Spinbot (AutoRotate & elseif conflict fixed)
+-- Removed: Broken Sandbox-only part manipulators
+-- Added: Interactive Player/Bot Selector List with instant TP & Search
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -59,7 +61,7 @@ local CFG = {
 	Jump = 50,
 	FlySpeed = 65,
 	FreecamSpeed = 50,
-	SpinSpeed = 25,
+	SpinSpeed = 35,
 	DashPower = 95,
 	SpiderSpeed = 35,
 	JetpackPower = 45,
@@ -72,14 +74,7 @@ local CFG = {
 	
 	OrbitRadius = 8,
 	OrbitSpeed = 4,
-	BlackHoleRadius = 85,
-	BlackHoleDist = 18,
-	VortexRadius = 90,
-	VortexSpeed = 6,
-	RepelRadius = 35,
-	RepelForce = 120,
 	FlingPower = 8500,
-	GravGunDist = 18,
 	
 	TargetPlayers = true,
 	TargetBots = true,
@@ -136,18 +131,13 @@ local S = {
 	AirWalk = false,
 	Spinbot = false,
 	CtrlClickTP = false,
-	AltClickImpulse = false,
-	BToolsHotkeys = false,
-	GravityGun = false,
 	
-	-- Троллинг и физика
-	BlackHole = false,
-	TornadoVortex = false,
-	MagnetRepel = false,
+	-- Троллинг
 	FlingTouch = false,
 	OrbitTarget = false,
 	HeadSit = false,
 	MimicTarget = false,
+	SpectateTarget = false,
 	FakeLag = false,
 	headlessVisual = false,
 	
@@ -279,7 +269,15 @@ local function getValidTargets(checkTeamForMode)
 						local hum = c:FindFirstChildOfClass("Humanoid")
 						local root = c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("Torso") or c:FindFirstChild("UpperTorso") or c.PrimaryPart
 						if hum and root and hum.Health > 0 then
-							table.insert(cachedTargetsList, {Model = c, Player = p, IsPlayer = true, Humanoid = hum, RootPart = root, Name = p.DisplayName or p.Name})
+							table.insert(cachedTargetsList, {
+								Model = c,
+								Player = p,
+								IsPlayer = true,
+								Humanoid = hum,
+								RootPart = root,
+								Name = p.DisplayName ~= p.Name and (p.DisplayName .. " (@" .. p.Name .. ")") or p.Name,
+								ShortName = p.DisplayName or p.Name
+							})
 						end
 					end
 				end
@@ -289,7 +287,15 @@ local function getValidTargets(checkTeamForMode)
 			for model, data in pairs(trackedBots) do
 				if model and model.Parent and data.Humanoid and data.Humanoid.Health > 0 and data.RootPart then
 					if model ~= getChar() then
-						table.insert(cachedTargetsList, {Model = model, Player = nil, IsPlayer = false, Humanoid = data.Humanoid, RootPart = data.RootPart, Name = model.Name})
+						table.insert(cachedTargetsList, {
+							Model = model,
+							Player = nil,
+							IsPlayer = false,
+							Humanoid = data.Humanoid,
+							RootPart = data.RootPart,
+							Name = "[BOT] " .. model.Name,
+							ShortName = model.Name
+						})
 					end
 				else
 					trackedBots[model] = nil
@@ -543,7 +549,7 @@ thudBarFill.BorderSizePixel = 0
 Instance.new("UICorner", thudBarFill).CornerRadius = UDim.new(0, 3)
 
 -- ==========================================
--- ОРИГИНАЛЬНЫЙ ПЛАВАЮЩИЙ КИБЕР-ЗНАЧОК МЕНЮ
+-- ПЛАВАЮЩИЙ КИБЕР-ЗНАЧОК МЕНЮ
 -- ==========================================
 local ToggleBadge = Instance.new("Frame")
 ToggleBadge.Name = "BaggetCyberBadge"
@@ -559,7 +565,6 @@ local badgeOuterStroke = Instance.new("UIStroke", ToggleBadge)
 badgeOuterStroke.Color = GREEN
 badgeOuterStroke.Thickness = 2
 
--- Вращающийся внутренний кибер-ромб
 local badgeRotor = Instance.new("Frame", ToggleBadge)
 badgeRotor.Size = UDim2.new(0, 34, 0, 34)
 badgeRotor.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -571,7 +576,6 @@ rotorStroke.Color = DARK_GREEN
 rotorStroke.Thickness = 1.5
 Instance.new("UICorner", badgeRotor).CornerRadius = UDim.new(0, 4)
 
--- Центральная пульсирующая точка-ореол
 local badgeGlow = Instance.new("Frame", ToggleBadge)
 badgeGlow.Size = UDim2.new(0, 22, 0, 22)
 badgeGlow.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -580,7 +584,6 @@ badgeGlow.BackgroundColor3 = GREEN
 badgeGlow.BackgroundTransparency = 0.78
 Instance.new("UICorner", badgeGlow).CornerRadius = UDim.new(1, 0)
 
--- Символ логотипа
 local badgeIcon = Instance.new("TextLabel", ToggleBadge)
 badgeIcon.Size = UDim2.new(1, 0, 0, 28)
 badgeIcon.Position = UDim2.new(0, 0, 0, 6)
@@ -590,12 +593,11 @@ badgeIcon.TextColor3 = GREEN
 badgeIcon.Font = Enum.Font.Code
 badgeIcon.TextSize = 16
 
--- Статус под значком
 local badgeSub = Instance.new("TextLabel", ToggleBadge)
 badgeSub.Size = UDim2.new(1, 0, 0, 12)
 badgeSub.Position = UDim2.new(0, 0, 1, -14)
 badgeSub.BackgroundTransparency = 1
-badgeSub.Text = "v19.1"
+badgeSub.Text = "v19.2"
 badgeSub.TextColor3 = TXT
 badgeSub.Font = Enum.Font.Code
 badgeSub.TextSize = 9
@@ -607,8 +609,8 @@ badgeBtn.Text = ""
 
 -- Главное окно меню
 local P = Instance.new("Frame")
-P.Size = UDim2.new(0, 355, 0, 580)
-P.Position = UDim2.new(0.5, -177, 0.5, -290)
+P.Size = UDim2.new(0, 365, 0, 580)
+P.Position = UDim2.new(0.5, -182, 0.5, -290)
 P.BackgroundColor3 = PANEL_BG
 P.BackgroundTransparency = 0.08
 P.BorderSizePixel = 2
@@ -618,18 +620,16 @@ P.ClipsDescendants = true
 P.Parent = SG
 Instance.new("UICorner", P).CornerRadius = UDim.new(0, 6)
 
--- ==========================================
--- ФОНОВЫЙ ASCII-АРТ ИЗ ФАЙЛА + МАТРИЦА
--- ==========================================
+-- Фоновый ASCII-арт
 local ASCII_ART_TEXT = [[
                                                                    .
                              :==                                  *#+.
                             -##%:                                 -###:
                            -####:                                 :####+
                           -#####-                                :*#####*
-                        :*######+                               .*#######+
-                       =#########=                              =#########-
-                      +##########+                       ...    .#%####*#%#:
+                        :*######+                                .*#######+
+                       =#########=                               =#########-
+                      +##########+                        ...    .#%####*#%#:
                      .##########-  .-++***+=-.      .-+*#####*=: .+####:.=*+
                      :##########++*###########*=-:-+############*==*####+:
                      .#######+*#######################################**##*-
@@ -640,29 +640,29 @@ local ASCII_ART_TEXT = [[
                      *####. ########################################*    *##=
                      :####.=#######################################+     *#+
                       +##*:*########*#############################-      *%+
-                       *%*=#####*##*:-*#########################=        ..
+                       *%*=#####*##*:-*#########################=         ..
                         -.+#########*-.-*####################*-
                          .############*=:-+################*-     =++-
                          =%#####..-+##%##=:.=############*-       =#**
                         :######*  . .:=+#%#==##*#######*=  :-=+*+  ***.
                         *#######   +*++=:-*#####*  ....   :***=-..=**#.
                        =########+. :++++: .#####*:         --===+#***-
-                       ###########+=-:::--=*#*####+-      +*+****++-
+                       ###########+=-:::--=*#*####+-     +*+****++-
                       =################%############*+-
-                      *################**#**********###*=:  =#+
-                      ################==****##########**##+:.*%*.
-                     :###############-.##*#*----::::.::::+##= +%#.
-                     :##############+ -####:        =+++*-+%*  *%+
-                      +%############: :####:       -#-**+: .   .##.
-                       -*#%%########  :#####+=:    .*           -#*
+                     *################**#**********###*=:  =#+
+                     ################==****##########**##+:.*%*.
+                    :###############-.##*#*----::::.::::+##= +%#.
+                    :##############+ -####:       =+++*-+%*  *%+
+                     +%############: :####:      -#-**+: .   .##.
+                      -*#%%########  :#####+=:    .*           -#*
                         .=++#######*   #########+-  =:
                        .**+-:-+####*-  *##########+ *%#-
                        :#*##*=..=*###*++*#*########-=###*:
                         .--=+*#+=--+###*+##########:=%###%*=.              :*
                           :-: .:::  .-+###*+=-:.::   :::::-+#*.            -#+
                          #%*+.          ::::..:=*=           ...=.         *+
-                         :+.       ..  -***###%%##+-...      +###:  .**:
-                                :**+=  -##-  .:-=++****=     :*#.    #-
+                         :+.      ..  -***###%%##+-...     +###:  .**:
+                                :**+=  -##-  .:-=++****=     :*#.   #-
                                  -=    .**.                   :+
 ]]
 
@@ -681,7 +681,7 @@ AsciiBG.TextYAlignment = Enum.TextYAlignment.Center
 AsciiBG.ZIndex = 1
 AsciiBG.Parent = P
 
--- Фоновая матрица символов поверх арта
+-- Фоновая матрица символов
 local EmojiBG = Instance.new("Folder", P)
 EmojiBG.Name = "EmojiBackground"
 local smiles = {"(^_^)", "[^v^]", ">_<", "0x19", "(•_•)", "[~_~]", "1010", "SYS"}
@@ -690,7 +690,7 @@ task.spawn(function()
 		if P.Visible and EmojiBG.Parent then
 			local em = Instance.new("TextLabel")
 			em.Size = UDim2.new(0, 60, 0, 20)
-			local startX = math.random(10, 275)
+			local startX = math.random(10, 285)
 			em.Position = UDim2.new(0, startX, 0, 35)
 			em.BackgroundTransparency = 1
 			em.Text = smiles[math.random(1, #smiles)]
@@ -726,7 +726,6 @@ TB.Active = true
 TB.ZIndex = 3
 TB.Parent = P
 
--- Мини-значок в самом заголовке окна
 local HeaderBadge = Instance.new("Frame", TB)
 HeaderBadge.Size = UDim2.new(0, 20, 0, 20)
 HeaderBadge.Position = UDim2.new(0, 7, 0, 6)
@@ -749,7 +748,7 @@ local TL = Instance.new("TextLabel")
 TL.Size = UDim2.new(1, -90, 1, 0)
 TL.Position = UDim2.new(0, 33, 0, 0)
 TL.BackgroundTransparency = 1
-TL.Text = "BAGGET SCRIPTS [v19.1 ULTIMATE]"
+TL.Text = "BAGGET SCRIPTS [v19.2]"
 TL.TextColor3 = GREEN
 TL.TextSize = 12
 TL.Font = Enum.Font.Code
@@ -981,7 +980,7 @@ local function makeSlider(parent, name, minV, maxV, def, cb)
 	vl.Text = tostring(def)
 	vl.TextColor3 = GREEN
 	vl.TextSize = 11
-	vl.Font = Enum.Font.Code
+	l.Font = Enum.Font.Code
 	vl.TextXAlignment = Enum.TextXAlignment.Right
 	vl.ZIndex = 2
 	vl.Parent = r
@@ -1099,7 +1098,7 @@ local function makeColorPicker(parent, name, defaultColor, cb)
 end
 
 -- ==========================================
--- МОДУЛИ ДВИЖЕНИЯ, ТРОЛЛИНГА И ФИЗИКИ
+-- МОДУЛИ ДВИЖЕНИЯ И ТРОЛЛИНГА
 -- ==========================================
 local noclipConn, originalCollide = nil, {}
 
@@ -1212,17 +1211,6 @@ local function toggleAirWalk(on)
 	end
 end
 
--- Black Hole & Vortex восстановление коллизии
-local blackHoleAffected = {}
-local function restoreBlackHoleParts()
-	for part, origCollide in pairs(blackHoleAffected) do
-		if part and part.Parent then
-			part.CanCollide = origCollide
-		end
-	end
-	table.clear(blackHoleAffected)
-end
-
 -- Anti-Fling восстановление
 local antiFlingOrig = {}
 local function restoreAntiFling()
@@ -1255,41 +1243,11 @@ local function toggleFlingTouch(on)
 	end
 end
 
--- Грави-пушка (Gravity Gun)
-local heldPart = nil
-local gravBeam = nil
-local gravAtt0, gravAtt1 = nil, nil
-
-local function releaseGravGun()
-	if gravBeam then gravBeam:Destroy() gravBeam = nil end
-	if gravAtt0 then gravAtt0:Destroy() gravAtt0 = nil end
-	if gravAtt1 then gravAtt1:Destroy() gravAtt1 = nil end
-	heldPart = nil
-end
-
-local function grabOrThrowPart()
-	local r = getRoot()
-	if not r then return end
-	if heldPart and heldPart.Parent then
-		local throwTarget = heldPart
-		releaseGravGun()
-		throwTarget.AssemblyLinearVelocity = Camera.CFrame.LookVector * 160 + Vector3.new(0, 25, 0)
-	else
-		local t = Mouse.Target
-		if t and t:IsA("BasePart") and not t.Anchored and not t:IsDescendantOf(getChar()) then
-			heldPart = t
-			CFG.GravGunDist = math.clamp((r.Position - t.Position).Magnitude, 8, 60)
-			gravAtt0 = Instance.new("Attachment", r)
-			gravAtt1 = Instance.new("Attachment", t)
-			gravBeam = Instance.new("Beam", r)
-			gravBeam.Attachment0 = gravAtt0
-			gravBeam.Attachment1 = gravAtt1
-			gravBeam.Width0 = 0.25
-			gravBeam.Width1 = 0.45
-			gravBeam.FaceCamera = true
-			gravBeam.Color = ColorSequence.new(currentThemeColor)
-			gravBeam.LightEmission = 1
-		end
+-- ИСПРАВЛЕННЫЙ СПИНБОТ
+local function toggleSpinbot(on)
+	local h = getHum()
+	if h then
+		h.AutoRotate = not on
 	end
 end
 
@@ -1332,24 +1290,139 @@ local function toggleFreecam(on)
 	end
 end
 
--- Система наблюдения (Spectate, Orbit, HeadSit, Mimic)
-local selectedTargetIndex = 1
+-- ==========================================
+-- УДОБНАЯ СИСТЕМА ТЕЛЕПОРТА И ВЫБОРА ЦЕЛЕЙ
+-- ==========================================
 local currentSelectedTarget = nil
 local targetLabelUI = nil
+local targetSearchFilter = ""
+local targetListFrame = nil
 
-local function cycleSelectedTarget(step)
-	local list = getValidTargets(false)
-	if #list == 0 then
-		currentSelectedTarget = nil
-		if targetLabelUI then targetLabelUI.Text = "Цель: [НЕТ ЦЕЛЕЙ]" end
-		return
-	end
-	selectedTargetIndex = selectedTargetIndex + step
-	if selectedTargetIndex > #list then selectedTargetIndex = 1 end
-	if selectedTargetIndex < 1 then selectedTargetIndex = #list end
-	currentSelectedTarget = list[selectedTargetIndex]
+local function setSelectedTarget(targetData)
+	currentSelectedTarget = targetData
 	if targetLabelUI then
-		targetLabelUI.Text = "Цель: " .. tostring(currentSelectedTarget.Name)
+		if targetData and targetData.Model and targetData.Model.Parent then
+			targetLabelUI.Text = "Цель: " .. tostring(targetData.ShortName or targetData.Name)
+			targetLabelUI.TextColor3 = GREEN
+		else
+			targetLabelUI.Text = "Цель: [НЕ ВЫБРАНА]"
+			targetLabelUI.TextColor3 = TXT
+		end
+	end
+	if S.SpectateTarget then
+		if currentSelectedTarget and currentSelectedTarget.Humanoid then
+			Camera.CameraSubject = currentSelectedTarget.Humanoid
+		else
+			local h = getHum()
+			if h then Camera.CameraSubject = h end
+		end
+	end
+end
+
+local function teleportToTarget(targetData)
+	if not targetData or not targetData.RootPart or not targetData.RootPart.Parent then return end
+	local r = getRoot()
+	if r then
+		r.CFrame = targetData.RootPart.CFrame * CFrame.new(0, 0, 3.2)
+		r.AssemblyLinearVelocity = Vector3.zero
+	end
+end
+
+local function refreshTargetListUI()
+	if not targetListFrame then return end
+	for _, child in ipairs(targetListFrame:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+
+	local list = getValidTargets(false)
+	local myRoot = getRoot()
+	local filterLower = string.lower(targetSearchFilter or "")
+
+	-- Сортировка: сначала игроки, потом боты, внутри — по дистанции
+	table.sort(list, function(a, b)
+		if a.IsPlayer ~= b.IsPlayer then
+			return a.IsPlayer
+		end
+		if myRoot and a.RootPart and b.RootPart then
+			return (a.RootPart.Position - myRoot.Position).Magnitude < (b.RootPart.Position - myRoot.Position).Magnitude
+		end
+		return tostring(a.Name) < tostring(b.Name)
+	end)
+
+	local shownCount = 0
+	for _, t in ipairs(list) do
+		local nameLower = string.lower(t.Name)
+		if filterLower == "" or string.find(nameLower, filterLower, 1, true) then
+			shownCount = shownCount + 1
+			local dist = (myRoot and t.RootPart) and math.floor((t.RootPart.Position - myRoot.Position).Magnitude) or 0
+			local isSel = (currentSelectedTarget and currentSelectedTarget.Model == t.Model)
+
+			local row = Instance.new("Frame")
+			row.Size = UDim2.new(1, -4, 0, 26)
+			row.BackgroundColor3 = isSel and CAT_BG or ELEM_BG
+			row.BackgroundTransparency = 0.15
+			row.BorderSizePixel = 1
+			row.BorderColor3 = isSel and GREEN or DARK_GREEN
+			row.ZIndex = 2
+			row.Parent = targetListFrame
+			Instance.new("UICorner", row).CornerRadius = UDim.new(0, 4)
+
+			local nameBtn = Instance.new("TextButton")
+			nameBtn.Size = UDim2.new(1, -92, 1, 0)
+			nameBtn.Position = UDim2.new(0, 6, 0, 0)
+			nameBtn.BackgroundTransparency = 1
+			nameBtn.Text = string.format("%s [%dm]", t.Name, dist)
+			nameBtn.TextColor3 = t.IsPlayer and GREEN or Color3.fromRGB(255, 180, 50)
+			nameBtn.Font = Enum.Font.Code
+			nameBtn.TextSize = 10
+			nameBtn.TextXAlignment = Enum.TextXAlignment.Left
+			nameBtn.TextTruncate = Enum.TextTruncate.AtEnd
+			nameBtn.ZIndex = 2
+			nameBtn.Parent = row
+
+			local selBtn = Instance.new("TextButton")
+			selBtn.Size = UDim2.new(0, 40, 0, 20)
+			selBtn.Position = UDim2.new(1, -84, 0, 3)
+			selBtn.BackgroundColor3 = isSel and GREEN or BLACK
+			selBtn.BorderSizePixel = 1
+			selBtn.BorderColor3 = GREEN
+			selBtn.Text = isSel and "SEL" or "AIM"
+			selBtn.TextColor3 = isSel and BLACK or TXT
+			selBtn.Font = Enum.Font.Code
+			selBtn.TextSize = 10
+			selBtn.ZIndex = 2
+			selBtn.Parent = row
+			Instance.new("UICorner", selBtn).CornerRadius = UDim.new(0, 3)
+
+			local tpBtn = Instance.new("TextButton")
+			tpBtn.Size = UDim2.new(0, 38, 0, 20)
+			tpBtn.Position = UDim2.new(1, -41, 0, 3)
+			tpBtn.BackgroundColor3 = DARK_GREEN
+			tpBtn.BorderSizePixel = 1
+			tpBtn.BorderColor3 = GREEN
+			tpBtn.Text = "TP"
+			tpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			tpBtn.Font = Enum.Font.Code
+			tpBtn.TextSize = 10
+			tpBtn.ZIndex = 2
+			tpBtn.Parent = row
+			Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 3)
+
+			local function selectThis()
+				setSelectedTarget(t)
+				refreshTargetListUI()
+			end
+
+			nameBtn.MouseButton1Click:Connect(selectThis)
+			selBtn.MouseButton1Click:Connect(selectThis)
+			tpBtn.MouseButton1Click:Connect(function()
+				setSelectedTarget(t)
+				teleportToTarget(t)
+				refreshTargetListUI()
+			end)
+		end
 	end
 end
 
@@ -1379,7 +1452,6 @@ local function resetBigHeads()
 end
 
 local orbitAngle = 0
-local vortexAngle = 0
 local lastStepWave = 0
 local lastGhostClone = 0
 local lastLightningTick = 0
@@ -1646,70 +1718,6 @@ bindConnection(RunService.Heartbeat, function(dt)
 		end
 	end
 
-	-- Gravity Gun удержание
-	if S.GravityGun and heldPart then
-		if heldPart.Parent and not heldPart.Anchored then
-			local targetPos = Camera.CFrame.Position + (Camera.CFrame.LookVector * CFG.GravGunDist)
-			heldPart.AssemblyLinearVelocity = (targetPos - heldPart.Position) * 10
-			if gravBeam then gravBeam.Color = ColorSequence.new(currentThemeColor) end
-		else
-			releaseGravGun()
-		end
-	end
-
-	-- Black Hole
-	if S.BlackHole and r and myChar then
-		local holeCenter = r.Position + Camera.CFrame.LookVector * CFG.BlackHoleDist
-		local parts = workspace:GetPartBoundsInRadius(r.Position, CFG.BlackHoleRadius)
-		for _, part in ipairs(parts) do
-			if part:IsA("BasePart") and not part.Anchored and part ~= airWalkPart and not part:IsDescendantOf(myChar) then
-				local pHum = part.Parent and part.Parent:FindFirstChildOfClass("Humanoid")
-				if not pHum then
-					if blackHoleAffected[part] == nil then
-						blackHoleAffected[part] = part.CanCollide
-					end
-					part.CanCollide = false
-					part.AssemblyLinearVelocity = (holeCenter - part.Position) * 5
-				end
-			end
-		end
-	end
-
-	-- Tornado Vortex
-	if S.TornadoVortex and r and myChar then
-		vortexAngle = vortexAngle + dt * CFG.VortexSpeed
-		local parts = workspace:GetPartBoundsInRadius(r.Position, CFG.VortexRadius)
-		for idx, part in ipairs(parts) do
-			if part:IsA("BasePart") and not part.Anchored and part ~= airWalkPart and not part:IsDescendantOf(myChar) then
-				local pHum = part.Parent and part.Parent:FindFirstChildOfClass("Humanoid")
-				if not pHum then
-					if blackHoleAffected[part] == nil then
-						blackHoleAffected[part] = part.CanCollide
-					end
-					part.CanCollide = false
-					local a = vortexAngle + (idx * 0.45)
-					local radius = 10 + (idx % 12)
-					local height = 2 + ((idx * 1.3) % 24)
-					local targetPos = r.Position + Vector3.new(math.cos(a) * radius, height, math.sin(a) * radius)
-					part.AssemblyLinearVelocity = (targetPos - part.Position) * 6
-				end
-			end
-		end
-	end
-
-	-- Magnet Repel
-	if S.MagnetRepel and r and myChar then
-		local parts = workspace:GetPartBoundsInRadius(r.Position, CFG.RepelRadius)
-		for _, part in ipairs(parts) do
-			if part:IsA("BasePart") and not part.Anchored and part ~= airWalkPart and not part:IsDescendantOf(myChar) then
-				local diff = (part.Position - r.Position)
-				if diff.Magnitude > 0.1 then
-					part.AssemblyLinearVelocity = diff.Unit * CFG.RepelForce + Vector3.new(0, 15, 0)
-				end
-			end
-		end
-	end
-
 	-- AirWalk обновление
 	if S.AirWalk and airWalkPart and r then
 		if not UIS:GetFocusedTextBox() then
@@ -1735,8 +1743,10 @@ bindConnection(RunService.Heartbeat, function(dt)
 	end
 
 	-- Интеракции с выбранной целью (Orbit / HeadSit / Mimic)
-	if currentSelectedTarget and currentSelectedTarget.RootPart and currentSelectedTarget.RootPart.Parent and r and h then
+	local lockedToTarget = false
+	if (S.OrbitTarget or S.HeadSit or S.MimicTarget) and currentSelectedTarget and currentSelectedTarget.RootPart and currentSelectedTarget.RootPart.Parent and r and h then
 		local tRoot = currentSelectedTarget.RootPart
+		lockedToTarget = true
 		if S.OrbitTarget then
 			orbitAngle = orbitAngle + dt * CFG.OrbitSpeed
 			local tPos = tRoot.Position
@@ -1751,7 +1761,11 @@ bindConnection(RunService.Heartbeat, function(dt)
 			r.CFrame = tRoot.CFrame * CFrame.new(0, 0, 4.5)
 			r.AssemblyLinearVelocity = Vector3.zero
 		end
-	elseif S.Spinbot and r then
+	end
+
+	-- ИСПРАВЛЕННЫЙ СПИНБОТ: работает независимо от выбранной цели!
+	if S.Spinbot and r and h and not lockedToTarget then
+		h.AutoRotate = false
 		r.CFrame = r.CFrame * CFrame.Angles(0, math.rad(CFG.SpinSpeed), 0)
 	end
 
@@ -2007,6 +2021,7 @@ local lookLaserFrames = {}
 local fxAngle = 0
 local fpsSmoothed = 60
 local lastHUDTick = 0
+local lastTargetListRefresh = 0
 
 bindConnection(RunService.RenderStepped, function(dt)
 	fxAngle = fxAngle + dt * 2.5
@@ -2042,6 +2057,13 @@ bindConnection(RunService.RenderStepped, function(dt)
 	if not S.TriggerIndicator then
 		chDot.BackgroundColor3 = currentThemeColor
 		for _, l in ipairs(chLines) do l.BackgroundColor3 = currentThemeColor end
+	end
+
+	-- Автообновление списка целей раз в 1.2 секунды, когда меню открыто
+	local now = tick()
+	if P.Visible and now - lastTargetListRefresh > 1.2 then
+		lastTargetListRefresh = now
+		refreshTargetListUI()
 	end
 
 	-- Freecam обновление
@@ -2088,7 +2110,6 @@ bindConnection(RunService.RenderStepped, function(dt)
 	local allTargets = getValidTargets(false)
 
 	-- Троттлинг текстовых HUD (10 раз в секунду)
-	local now = tick()
 	if now - lastHUDTick > 0.1 then
 		lastHUDTick = now
 		TelemetryBar.Visible = S.TelemetryHUD
@@ -2281,7 +2302,7 @@ bindConnection(RunService.RenderStepped, function(dt)
 					bData.NameLbl.Visible = S.NameESP
 					if S.NameESP then
 						local distMeters = myRoot and math.floor((myRoot.Position - root.Position).Magnitude) or 0
-						bData.NameLbl.Text = string.format("%s [%dm]", t.Name, distMeters)
+						bData.NameLbl.Text = string.format("%s [%dm]", t.ShortName or t.Name, distMeters)
 						bData.NameLbl.TextColor3 = col
 					end
 				elseif boxPool[model] then
@@ -2393,7 +2414,7 @@ bindConnection(RunService.RenderStepped, function(dt)
 		local ratio = math.clamp(hp / math.max(1, maxHp), 0, 1)
 		
 		TargetHUDFrame.Visible = true
-		thudTitle.Text = "TARGET: " .. string.upper(tData.Name)
+		thudTitle.Text = "TARGET: " .. string.upper(tData.ShortName or tData.Name)
 		thudSub.Text = string.format("HP: %d/%d | DIST: %dm", hp, maxHp, distM)
 		thudBarFill.Size = UDim2.new(ratio, 0, 1, 0)
 		thudBarFill.BackgroundColor3 = Color3.fromHSV(ratio * 0.33, 0.9, 1)
@@ -2417,8 +2438,186 @@ end)
 -- НАПОЛНЕНИЕ КАТЕГОРИЙ И ФУНКЦИЙ МЕНЮ
 -- ==========================================
 
--- 1. Передвижение и Физика
-local catMove = makeCategory("MOVEMENT & PHYSICS", true)
+-- 1. Быстрый телепорт и выбор игроков/ботов
+local catTP = makeCategory("TELEPORT & TARGET SELECTOR", true)
+
+targetLabelUI = Instance.new("TextLabel", catTP)
+targetLabelUI.Size = UDim2.new(1, 0, 0, 24)
+targetLabelUI.BackgroundColor3 = BLACK
+targetLabelUI.BorderSizePixel = 1
+targetLabelUI.BorderColor3 = GREEN
+targetLabelUI.Text = "Цель: [НЕ ВЫБРАНА]"
+targetLabelUI.TextColor3 = TXT
+targetLabelUI.Font = Enum.Font.Code
+targetLabelUI.TextSize = 11
+targetLabelUI.ZIndex = 2
+targetLabelUI.LayoutOrder = nextOrder()
+Instance.new("UICorner", targetLabelUI).CornerRadius = UDim.new(0, 4)
+
+-- Строка поиска цели
+local searchBox = Instance.new("TextBox", catTP)
+searchBox.Size = UDim2.new(1, 0, 0, 26)
+searchBox.BackgroundColor3 = ELEM_BG
+searchBox.BorderSizePixel = 1
+searchBox.BorderColor3 = DARK_GREEN
+searchBox.PlaceholderText = "Поиск игрока или бота по имени..."
+searchBox.PlaceholderColor3 = Color3.fromRGB(130, 145, 135)
+searchBox.Text = ""
+searchBox.TextColor3 = GREEN
+searchBox.Font = Enum.Font.Code
+searchBox.TextSize = 11
+searchBox.ClearTextOnFocus = false
+searchBox.ZIndex = 2
+searchBox.LayoutOrder = nextOrder()
+Instance.new("UICorner", searchBox).CornerRadius = UDim.new(0, 4)
+
+searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+	targetSearchFilter = searchBox.Text
+	refreshTargetListUI()
+end)
+
+-- Быстрые кнопки телепорта
+local quickBtnsRow = Instance.new("Frame", catTP)
+quickBtnsRow.Size = UDim2.new(1, 0, 0, 26)
+quickBtnsRow.BackgroundTransparency = 1
+quickBtnsRow.LayoutOrder = nextOrder()
+quickBtnsRow.ZIndex = 2
+
+local tpSelectedBtn = Instance.new("TextButton", quickBtnsRow)
+tpSelectedBtn.Size = UDim2.new(0.49, 0, 1, 0)
+tpSelectedBtn.Position = UDim2.new(0, 0, 0, 0)
+tpSelectedBtn.BackgroundColor3 = DARK_GREEN
+tpSelectedBtn.BorderSizePixel = 1
+tpSelectedBtn.BorderColor3 = GREEN
+tpSelectedBtn.Text = "TP к Выбранному"
+tpSelectedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+tpSelectedBtn.Font = Enum.Font.Code
+tpSelectedBtn.TextSize = 10
+tpSelectedBtn.ZIndex = 2
+Instance.new("UICorner", tpSelectedBtn).CornerRadius = UDim.new(0, 4)
+
+local tpNearestBtn = Instance.new("TextButton", quickBtnsRow)
+tpNearestBtn.Size = UDim2.new(0.49, 0, 1, 0)
+tpNearestBtn.Position = UDim2.new(0.51, 0, 0, 0)
+tpNearestBtn.BackgroundColor3 = DARK_GREEN
+tpNearestBtn.BorderSizePixel = 1
+tpNearestBtn.BorderColor3 = GREEN
+tpNearestBtn.Text = "TP к Ближайшему"
+tpNearestBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+tpNearestBtn.Font = Enum.Font.Code
+tpNearestBtn.TextSize = 10
+tpNearestBtn.ZIndex = 2
+Instance.new("UICorner", tpNearestBtn).CornerRadius = UDim.new(0, 4)
+
+tpSelectedBtn.MouseButton1Click:Connect(function()
+	if currentSelectedTarget then
+		teleportToTarget(currentSelectedTarget)
+	end
+end)
+
+tpNearestBtn.MouseButton1Click:Connect(function()
+	local list = getValidTargets(false)
+	local myRoot = getRoot()
+	if not myRoot or #list == 0 then return end
+	local best, minDist = nil, math.huge
+	for _, t in ipairs(list) do
+		if t.RootPart then
+			local d = (t.RootPart.Position - myRoot.Position).Magnitude
+			if d < minDist then
+				minDist = d
+				best = t
+			end
+		end
+	end
+	if best then
+		setSelectedTarget(best)
+		teleportToTarget(best)
+		refreshTargetListUI()
+	end
+end)
+
+-- Прокручиваемый список всех игроков и ботов
+targetListFrame = Instance.new("ScrollingFrame", catTP)
+targetListFrame.Size = UDim2.new(1, 0, 0, 145)
+targetListFrame.BackgroundColor3 = BLACK
+targetListFrame.BackgroundTransparency = 0.2
+targetListFrame.BorderSizePixel = 1
+targetListFrame.BorderColor3 = DARK_GREEN
+targetListFrame.ScrollBarThickness = 3
+targetListFrame.ScrollBarImageColor3 = GREEN
+targetListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+targetListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+targetListFrame.ZIndex = 2
+targetListFrame.LayoutOrder = nextOrder()
+Instance.new("UICorner", targetListFrame).CornerRadius = UDim.new(0, 4)
+
+local tListLayout = Instance.new("UIListLayout", targetListFrame)
+tListLayout.Padding = UDim.new(0, 3)
+tListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local tListPad = Instance.new("UIPadding", targetListFrame)
+tListPad.PaddingTop = UDim.new(0, 4)
+tListPad.PaddingBottom = UDim.new(0, 4)
+tListPad.PaddingLeft = UDim.new(0, 4)
+
+makeToggle(catTP, "Показывать Игроков в списке", true, function(v)
+	CFG.TargetPlayers = v
+	lastTargetUpdate = 0
+	refreshTargetListUI()
+end)
+makeToggle(catTP, "Показывать Ботов (NPC) в списке", true, function(v)
+	CFG.TargetBots = v
+	lastTargetUpdate = 0
+	refreshTargetListUI()
+end)
+makeToggle(catTP, "Ctrl + Click Телепорт по Курсору", false, function(v) S.CtrlClickTP = v end)
+
+-- 2. Троллинг
+local catTroll = makeCategory("TROLLING & TARGET ACTIONS", true)
+
+makeToggle(catTroll, "Spinbot (Вращение Персонажа)", false, function(v)
+	S.Spinbot = v
+	toggleSpinbot(v)
+end)
+makeSlider(catTroll, "Скорость Spinbot", 5, 120, 35, function(v) CFG.SpinSpeed = v end)
+
+makeToggle(catTroll, "Orbit Selected Target (Вращаться Вокруг)", false, function(v)
+	S.OrbitTarget = v
+end)
+makeSlider(catTroll, "Радиус Орбиты", 3, 25, 8, function(v) CFG.OrbitRadius = v end)
+makeSlider(catTroll, "Скорость Орбиты", 1, 15, 4, function(v) CFG.OrbitSpeed = v end)
+
+makeToggle(catTroll, "Head Sit On Target (Сесть на Голову)", false, function(v)
+	S.HeadSit = v
+end)
+makeToggle(catTroll, "Mimic Target (Копировать Движения Сзади)", false, function(v)
+	S.MimicTarget = v
+end)
+makeToggle(catTroll, "Spectate Target (Следить Камерой)", false, function(v)
+	S.SpectateTarget = v
+	if v and currentSelectedTarget and currentSelectedTarget.Humanoid then
+		Camera.CameraSubject = currentSelectedTarget.Humanoid
+	else
+		local h = getHum()
+		if h then Camera.CameraSubject = h end
+	end
+end)
+makeToggle(catTroll, "Fling Touch (Откидывать Игроков Касанием)", false, function(v)
+	S.FlingTouch = v
+	toggleFlingTouch(v)
+end)
+makeToggle(catTroll, "Fake Lag (Имитация Высокого Пинга)", false, function(v)
+	S.FakeLag = v
+	local r = getRoot()
+	if not v and r then r.Anchored = S.FreezeChar end
+end)
+makeToggle(catTroll, "Anti-Fling Защита", false, function(v)
+	S.AntiFling = v
+	if not v then restoreAntiFling() end
+end)
+
+-- 3. Передвижение и Физика
+local catMove = makeCategory("MOVEMENT & CHARACTER", true)
 makeToggle(catMove, "Speed & Jump Lock", false, function(v)
 	S.SpeedLock = v
 	if not v then
@@ -2436,106 +2635,38 @@ makeSlider(catMove, "Fly Speed", 20, 300, 65, function(v) CFG.FlySpeed = v end)
 makeToggle(catMove, "Jetpack (Hold Space)", false, function(v) S.Jetpack = v end)
 makeToggle(catMove, "Infinite Jump", false, function(v) S.InfiniteJump = v end)
 makeToggle(catMove, "Auto BunnyHop", false, function(v) S.AutoBhop = v end)
-makeToggle(catMove, "Spider Climb (Wall Climb)", false, function(v) S.SpiderClimb = v end)
-makeToggle(catMove, "AirWalk Platform (E/Q Height)", false, function(v)
+makeToggle(catMove, "Spider Climb (Лазать по Стенам)", false, function(v) S.SpiderClimb = v end)
+makeToggle(catMove, "AirWalk Platform (E/Q Высота)", false, function(v)
 	S.AirWalk = v
 	toggleAirWalk(v)
 end)
-makeToggle(catMove, "Noclip (Phase Walls)", false, function(v)
+makeToggle(catMove, "Noclip (Проход Сквозь Стены)", false, function(v)
 	S.Noclip = v
 	if v then enableNoclip() else disableNoclip() end
 end)
-makeButton(catMove, "Dash Forward [Impulse]", DARK_GREEN, performDash)
-makeButton(catMove, "Spawn Neon Platform [Key: Z]", DARK_GREEN, spawnNeonPad)
+makeButton(catMove, "Dash Forward [Рывок Вперед]", DARK_GREEN, performDash)
+makeButton(catMove, "Spawn Neon Platform [Клавиша: Z]", DARK_GREEN, spawnNeonPad)
 
--- 2. Троллинг, Гравитация и Интеракции
-local catTroll = makeCategory("TROLLING & SANDBOX PHYSICS", true)
-
-targetLabelUI = Instance.new("TextLabel", catTroll)
-targetLabelUI.Size = UDim2.new(1, 0, 0, 22)
-targetLabelUI.BackgroundColor3 = BLACK
-targetLabelUI.BorderSizePixel = 1
-targetLabelUI.BorderColor3 = DARK_GREEN
-targetLabelUI.Text = "Цель: [НЕ ВЫБРАНА]"
-targetLabelUI.TextColor3 = GREEN
-targetLabelUI.Font = Enum.Font.Code
-targetLabelUI.TextSize = 11
-targetLabelUI.ZIndex = 2
-targetLabelUI.LayoutOrder = nextOrder()
-
-makeButton(catTroll, "Next Target [►]", DARK_GREEN, function() cycleSelectedTarget(1) end)
-makeButton(catTroll, "Teleport To Selected Target", DARK_GREEN, function()
-	if not currentSelectedTarget then cycleSelectedTarget(1) end
-	local r = getRoot()
-	if r and currentSelectedTarget and currentSelectedTarget.RootPart then
-		r.CFrame = currentSelectedTarget.RootPart.CFrame * CFrame.new(0, 0, 3.5)
-	end
-end)
-makeToggle(catTroll, "Orbit Selected Target", false, function(v)
-	if v and not currentSelectedTarget then cycleSelectedTarget(1) end
-	S.OrbitTarget = v
-end)
-makeToggle(catTroll, "Head Sit On Target", false, function(v)
-	if v and not currentSelectedTarget then cycleSelectedTarget(1) end
-	S.HeadSit = v
-end)
-makeToggle(catTroll, "Mimic Target Movement", false, function(v)
-	if v and not currentSelectedTarget then cycleSelectedTarget(1) end
-	S.MimicTarget = v
-end)
-makeToggle(catTroll, "Fling Touch (High-Speed Spin Impulse)", false, function(v)
-	S.FlingTouch = v
-	toggleFlingTouch(v)
-end)
-makeToggle(catTroll, "Black Hole (Attract Unanchored Parts)", false, function(v)
-	S.BlackHole = v
-	if not v and not S.TornadoVortex then restoreBlackHoleParts() end
-end)
-makeToggle(catTroll, "Tornado Vortex (Swirl World Parts)", false, function(v)
-	S.TornadoVortex = v
-	if not v and not S.BlackHole then restoreBlackHoleParts() end
-end)
-makeToggle(catTroll, "Magnet Repel Shield (Push Parts Away)", false, function(v)
-	S.MagnetRepel = v
-end)
-makeToggle(catTroll, "Gravity Gun [Press G to Grab/Throw]", false, function(v)
-	S.GravityGun = v
-	if not v then releaseGravGun() end
-end)
-makeToggle(catTroll, "Fake Lag (Stutter Movement)", false, function(v)
-	S.FakeLag = v
-	local r = getRoot()
-	if not v and r then r.Anchored = S.FreezeChar end
-end)
-makeToggle(catTroll, "Spinbot", false, function(v) S.Spinbot = v end)
-makeToggle(catTroll, "Anti-Fling Protection", false, function(v)
-	S.AntiFling = v
-	if not v then restoreAntiFling() end
-end)
-makeToggle(catTroll, "Ctrl + Click Teleport", false, function(v) S.CtrlClickTP = v end)
-makeToggle(catTroll, "Alt + Click Impulse Object", false, function(v) S.AltClickImpulse = v end)
-makeToggle(catTroll, "BTools Hotkeys (X=Del, C=Clone, V=Anchor)", false, function(v) S.BToolsHotkeys = v end)
-
--- 3. Локальный Визуал Персонажа (Client FX)
+-- 4. Локальный Визуал Персонажа (Client FX)
 local catFX = makeCategory("CHARACTER VISUAL FX (CLIENT)", false)
-makeToggle(catFX, "Cyber Neon Wings (Animated)", false, function(v) S.CyberWings = v toggleCyberWings(v) end)
+makeToggle(catFX, "Cyber Neon Wings (Анимированные)", false, function(v) S.CyberWings = v toggleCyberWings(v) end)
 makeToggle(catFX, "Gyroscopic Matrix Rings", false, function(v) S.GyroRings = v toggleGyroRings(v) end)
 makeToggle(catFX, "Lightning Storm Aura", false, function(v) S.LightningFX = v end)
 makeToggle(catFX, "Ghost Clone Trail", false, function(v) S.GhostTrail = v end)
 makeToggle(catFX, "Orbiting Neon Orbs", false, function(v) S.OrbitOrbs = v toggleOrbitOrbs(v) end)
-makeToggle(catFX, "China Hat (Neon Cone)", false, function(v) S.ChinaHat = v toggleChinaHat(v) end)
+makeToggle(catFX, "China Hat (Неоновая Шляпа)", false, function(v) S.ChinaHat = v toggleChinaHat(v) end)
 makeToggle(catFX, "Floating Halo Ring", false, function(v) S.Halo = v toggleHalo(v) end)
 makeToggle(catFX, "Cyber ForceField Shield", false, function(v) S.CyberShield = v toggleCyberShield(v) end)
 makeToggle(catFX, "Highlight Outline Pulse", false, function(v) S.Pulse = v togglePulse(v) end)
 makeToggle(catFX, "Sparkle Particle Aura", false, function(v) S.Aura = v toggleAura(v) end)
 makeToggle(catFX, "Footstep Shockwaves", false, function(v) S.StepWaves = v end)
 makeToggle(catFX, "Motion Neon Trail", false, function(v) S.Trail = v toggleTrail(v) end)
-makeToggle(catFX, "Headless Horseman (Visual)", false, function(v) S.headlessVisual = v toggleHeadless(v) end)
+makeToggle(catFX, "Headless Horseman (Визуал)", false, function(v) S.headlessVisual = v toggleHeadless(v) end)
 
--- 4. ESP и Визуальная разведка
+-- 5. ESP и Визуальная разведка
 local catESP = makeCategory("ESP & RADAR VISUALS", false)
 makeToggle(catESP, "Chams Highlight ESP", false, function(v) S.ESP = v end)
-makeToggle(catESP, "2D Corner Box ESP", false, function(v) S.BoxESP = v end)
+makeToggle(catESP, "2D Box ESP", false, function(v) S.BoxESP = v end)
 makeToggle(catESP, "Health Bar ESP", false, function(v) S.HealthESP = v end)
 makeToggle(catESP, "Name & Distance ESP", false, function(v) S.NameESP = v end)
 makeToggle(catESP, "Skeleton Bone ESP", false, function(v) S.Skeleton = v end)
@@ -2545,9 +2676,9 @@ makeToggle(catESP, "360 Mini-Radar HUD", false, function(v) S.RadarHUD = v end)
 makeColorPicker(catESP, "Player Visible Color", CFG.Color_PlayerVisible, function(c) CFG.Color_PlayerVisible = c end)
 makeColorPicker(catESP, "Bot Visible Color", CFG.Color_BotVisible, function(c) CFG.Color_BotVisible = c end)
 
--- 5. Боевой модуль и Хитбоксы
+-- 6. Боевой модуль и Хитбоксы
 local catCombat = makeCategory("COMBAT & HITBOX SUITE", false)
-makeToggle(catCombat, "Aimbot (Hold Right Click)", false, function(v) S.Aimbot = v end)
+makeToggle(catCombat, "Aimbot (Зажать Правую Кнопку Мыши)", false, function(v) S.Aimbot = v end)
 makeToggle(catCombat, "Show Aimbot FOV Circle", false, function(v) S.ShowFOV = v end)
 makeSlider(catCombat, "Aimbot FOV Radius", 30, 450, 150, function(v) CFG.AimFOV = v end)
 makeSlider(catCombat, "Aimbot Smoothness", 1, 20, 4, function(v) CFG.AimSmoothness = v end)
@@ -2564,12 +2695,12 @@ end)
 makeToggle(catCombat, "Rotating Cyber Crosshair", false, function(v) S.Crosshair = v end)
 makeToggle(catCombat, "Trigger Crosshair Color Alert", false, function(v) S.TriggerIndicator = v end)
 
--- 6. Мир, Камера и Система
+-- 7. Мир, Камера и Система
 local catWorld = makeCategory("WORLD, CAMERA & HUD", false)
 makeToggle(catWorld, "RGB Rainbow Theme", false, function(v) S.RainbowMode = v end)
 makeToggle(catWorld, "Top Telemetry Bar", true, function(v) S.TelemetryHUD = v end)
 makeToggle(catWorld, "Part Inspector HUD", false, function(v) S.PartInspector = v end)
-makeToggle(catWorld, "Freecam (RMB to Rotate)", false, function(v)
+makeToggle(catWorld, "Freecam (ПКМ для вращения)", false, function(v)
 	S.Freecam = v
 	toggleFreecam(v)
 end)
@@ -2599,6 +2730,9 @@ makeToggle(catWorld, "Infinite Camera Zoom", false, function(v)
 	S.InfiniteZoom = v
 	LP.CameraMaxZoomDistance = v and 100000 or OrigWorld.MaxZoom
 end)
+
+-- Первичная отрисовка списка целей
+refreshTargetListUI()
 
 -- ==========================================
 -- ОБРАБОТКА ВВОДА, ПЕРЕТАСКИВАНИЯ И ХОТКЕЕВ
@@ -2631,6 +2765,7 @@ badgeBtn.MouseButton1Click:Connect(function()
 	if not badgeMoved then
 		P.Visible = not P.Visible
 		badgeSub.Text = P.Visible and "OPEN" or "HIDE"
+		if P.Visible then refreshTargetListUI() end
 	end
 end)
 
@@ -2659,7 +2794,6 @@ bindConnection(UIS.InputEnded, function(input)
 	end
 end)
 
--- Кличка прыжка в воздухе
 bindConnection(UIS.JumpRequest, function()
 	if S.InfiniteJump then
 		local h = getHum()
@@ -2667,7 +2801,6 @@ bindConnection(UIS.JumpRequest, function()
 	end
 end)
 
--- Горячие клавиши и бинды
 bindConnection(UIS.InputBegan, function(input, gpe)
 	if bindingFeatureName and input.UserInputType == Enum.UserInputType.Keyboard then
 		local key = (input.KeyCode ~= Enum.KeyCode.Escape and input.KeyCode ~= Enum.KeyCode.Backspace) and input.KeyCode or nil
@@ -2684,25 +2817,9 @@ bindConnection(UIS.InputBegan, function(input, gpe)
 	if input.KeyCode == Enum.KeyCode.RightShift or input.KeyCode == Enum.KeyCode.Insert then
 		P.Visible = not P.Visible
 		badgeSub.Text = P.Visible and "OPEN" or "HIDE"
+		if P.Visible then refreshTargetListUI() end
 	elseif input.KeyCode == Enum.KeyCode.Z then
 		spawnNeonPad()
-	elseif input.KeyCode == Enum.KeyCode.G and S.GravityGun then
-		grabOrThrowPart()
-	end
-
-	if S.BToolsHotkeys then
-		local t = Mouse.Target
-		if t and not t:IsDescendantOf(getChar()) then
-			if input.KeyCode == Enum.KeyCode.X then
-				t:Destroy()
-			elseif input.KeyCode == Enum.KeyCode.C then
-				local cl = trackPart(t:Clone())
-				cl.Parent = t.Parent
-				cl.CFrame = t.CFrame * CFrame.new(0, t.Size.Y, 0)
-			elseif input.KeyCode == Enum.KeyCode.V then
-				t.Anchored = not t.Anchored
-			end
-		end
 	end
 
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -2710,11 +2827,6 @@ bindConnection(UIS.InputBegan, function(input, gpe)
 			local r = getRoot()
 			if r and Mouse.Hit then
 				r.CFrame = CFrame.new(Mouse.Hit.Position + Vector3.new(0, 3.5, 0))
-			end
-		elseif S.AltClickImpulse and UIS:IsKeyDown(Enum.KeyCode.LeftAlt) then
-			local t = Mouse.Target
-			if t and t:IsA("BasePart") and not t.Anchored then
-				t.AssemblyLinearVelocity = Camera.CFrame.LookVector * 140 + Vector3.new(0, 40, 0)
 			end
 		end
 	end
@@ -2733,14 +2845,14 @@ MinBtn.MouseButton1Click:Connect(function()
 	SF.Visible = not minimized
 	AsciiBG.Visible = not minimized
 	EmojiBG.Parent = minimized and nil or P
-	P.Size = minimized and UDim2.new(0, 355, 0, 32) or UDim2.new(0, 355, 0, 580)
+	P.Size = minimized and UDim2.new(0, 365, 0, 32) or UDim2.new(0, 365, 0, 580)
 end)
 
 local function fullCleanup()
 	stopFly()
 	disableNoclip()
-	releaseGravGun()
 	toggleFlingTouch(false)
+	toggleSpinbot(false)
 	toggleAirWalk(false)
 	toggleXRay(false)
 	toggleFreecam(false)
@@ -2754,10 +2866,12 @@ local function fullCleanup()
 	toggleOrbitOrbs(false)
 	toggleTrail(false)
 	toggleHeadless(false)
-	restoreBlackHoleParts()
 	restoreAntiFling()
 	resetHitboxes()
 	resetBigHeads()
+
+	local h = getHum()
+	if h then Camera.CameraSubject = h end
 
 	workspace.Gravity = OrigWorld.Gravity
 	Camera.FieldOfView = OrigWorld.FOV
@@ -2782,6 +2896,7 @@ bindConnection(LP.CharacterAdded, function()
 	if S.Fly then startFly() end
 	if S.Noclip then enableNoclip() end
 	if S.FlingTouch then toggleFlingTouch(true) end
+	if S.Spinbot then toggleSpinbot(true) end
 	if S.Pulse then togglePulse(true) end
 	if S.Aura then toggleAura(true) end
 	if S.Trail then toggleTrail(true) end
